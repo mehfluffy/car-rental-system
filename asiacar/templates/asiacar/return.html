@@ -1,0 +1,19 @@
+{% extends "asiacar/base.html" %}
+ 
+{% block content %}
+
+<p>Your member number is {{ user.username }}.</p>
+
+{% if user.is_renting == True %}
+    <p>Your rented vehicle is due back on {{ rental.time_end }}.</p>
+    <p>The amount charged is {{ rental.price_total }}. Please indicate how you will pay below:</p>
+    <form id="money_form" action="" method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Checkout"/>
+    </form>
+{% else %}
+    <p>You are not currently renting a vehicle. Go <a href="{% url 'rent' %}">here</a> to rent one!</p>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "asiacar/base.html" %}
+ 
+{% block content %}
+{% if user.membership == 'R' %}
+<p>You will need to pay a pledge of {{ pledge }}. It will be refunded when you return the vehicle on time.</p>
+{% endif %}
+<p>The vehicle is located at {{ location }} and the pincode is {{ pincode }}.</p>
+{% endblock %}

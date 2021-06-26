@@ -1,0 +1,23 @@
+{% extends "asiacar/base.html" %}
+ 
+{% block content %}
+
+<p>Your member number is {{ user.username }}.</p>
+
+{% if user.is_renting == False %}
+
+<form action="" method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Checkout"/>
+</form>
+<p>Return time is in UTC.</p>
+
+{% else %}
+
+<p>You are currently already renting a vehicle.</p>
+<p>Please <a href="{% url 'return' %}">return</a> it before renting another one.</p>
+
+{% endif %}
+
+{% endblock %}

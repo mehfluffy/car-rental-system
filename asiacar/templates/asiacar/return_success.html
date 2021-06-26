@@ -1,0 +1,12 @@
+{% extends "asiacar/base.html" %}
+
+{% block content %}
+
+<p>You receive a change of {{ amount_change }}, split into:</p>
+<ul>
+{% for name, number in change.items %}
+    <li>{{ number }} x {{ name }}</li>
+{% endfor %}
+</ul>
+
+{% endblock %}
