@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from .models import *
 from .forms import *
-from .helpers import calculate_change, add_money
+from .helpers import calculate_change, add_money, subtract_money
 
 
 def home(request):
@@ -162,11 +162,12 @@ def return_success_view(request):
     amount_change = float(request.COOKIES.get('amount_change'))
     if (renter.membership == 'R') and (rental.get_delay()[0] == False):
         amount_change += rental.vehicle.subtype.pledgeprice_reg
-    change = calculate_change(amount_change)
+    change_dict = calculate_change(amount_change)
+    subtract_money(change_dict)
 
     context = {
         'user': renter,
         'amount_change': amount_change,
-        'change': change,
+        'change': change_dict,
     }
     return render(request, 'asiacar/return_success.html', context)
