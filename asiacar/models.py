@@ -37,17 +37,12 @@ class Vehicle(models.Model):
     def set_unavailable(self):
         self.available = False
 
-    def __str__(self):
-        return str(self.id) + ", " + self.subtype.subtype_name + ", " + str(self.available)
-"""
-    @property
-    def available(self):
-        return self._available
+    def set_available(self):
+        self.available = True
 
-    @available.setter 
-    def available(self, value):
-        self._available = value
-"""
+    def __str__(self):
+        return f'{self.id}, {self.subtype.subtype_name}, {self.available}'
+
 
 class User(AbstractUser):
     MEMBERSHIP_CHOICES = [
@@ -62,6 +57,9 @@ class User(AbstractUser):
     
     def reset_delays_thismonth(self):  # reset delays monthly
         self.delays_thismonth = 0
+
+    def __str__(self):
+        return self.username
 
 
 class Rental(models.Model):
@@ -81,9 +79,37 @@ class Rental(models.Model):
             )
         ]
 
+    def __str__(self):
+        return f'Vehicle:{self.vehicle.id}, Renter:{self.renter}, Returned:{self.time_returned}'
+
+    # delete function to reset renter and vehicle on delete
+
     def set_pincode(self):
         if not self.pincode:
             self.pincode = ''.join(random.choices(string.digits, k=6))
+
+    def get_num_hours(self):
+        seconds = (self.time_end - self.time_start).total_seconds()
+        num_hours = ceil(seconds / (60*60))
+        if num_hours < 4:
+            num_hours = 4
+        return num_hours
+
+    def set_renter_delay(self, delay):
+        renter = self.renter
+        num_delays = ceil(delay / (60*30))
+        renter.delays_thismonth += num_delays
+        renter.save(update_fields=['delays_thismonth'])
+
+    def get_delay(self):
+        is_delayed = self.time_returned > self.time_end
+        if is_delayed:
+            delay = (self.time_returned - self.time_end).total_seconds()
+            self.set_renter_delay(delay)
+            num_hours_delay = ceil(delay / (60*60))
+        else:
+            num_hours_delay = 0
+        return is_delayed, num_hours_delay
 
     def set_price_total(self):
         if not self.price_total:
@@ -91,29 +117,18 @@ class Rental(models.Model):
             subtype = self.vehicle.subtype
             renter = self.renter
 
-            seconds = (self.time_end - self.time_start).total_seconds()
-            num_hours = ceil(seconds / (60*60))
-            if num_hours < 4:
-                num_hours = 4
-
-            delayed = self.time_returned > self.time_end
-            delay = (self.time_returned - self.time_end).total_seconds()
+            num_hours = self.get_num_hours()
+            is_delayed, num_hours_delay = self.get_delay()
 
             price = 0.0
             if renter.membership == 'G':
-                if delayed:
-                    num_delays = delay / (60*30)
-                    renter.delays_thismonth += num_delays
-                    
-                    if renter.delays_thismonth > 4:
-                        num_hours += ceil(delay / (60*60))
-                
+                if is_delayed and renter.delays_thismonth > 4:
+                    num_hours += num_hours_delay
                 price += subtype.hourprice_gold * num_hours
 
             elif renter.membership == 'R':
-                if delayed:
-                    num_hours += ceil(delay / (60*60))
-                    price += subtype.pledgeprice_reg  # not refunded if delayed
+                if is_delayed:
+                    num_hours += num_hours_delay
                 price += subtype.hourprice_reg * num_hours
 
             self.price_total = round(price, 2)
@@ -133,23 +148,3 @@ class Money(models.Model):
     amount = models.FloatField(choices=AMOUNT_CHOICES)  # currency amount, e.g. 0.50
     name = models.CharField(max_length=30, unique=True)  # name of the bill/coin e.g. 50 cents
     number = models.IntegerField()  # number of this bill/coin in the automat
-
-"""
-    def set_vehicle_unavailable(self):
-        vehicle = Vehicle.objects.get(id=self.vehicle.id)
-        vehicle.available = False
-
-    def set_vehicle_available(self):
-        vehicle = Vehicle.objects.get(id=self.vehicle.id)
-        vehicle.available = True
-"""
-
-"""
-    def set_time_start(self):
-        if not self.time_start:
-            self.time_start = datetime.now()
-
-    def set_time_returned(self):
-        if not self.time_returned:
-            self.time_returned = datetime.now()
-"""

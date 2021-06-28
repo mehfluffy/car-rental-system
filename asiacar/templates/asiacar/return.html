@@ -6,6 +6,20 @@
 
 {% if user.is_renting == True %}
     <p>Your rented vehicle is due back on {{ rental.time_end }}.</p>
+    <p>
+        {% if rental.time_returned > rental.time_end %}
+            You're late!
+            {% if user.membership == 'R' %}
+                Your pledge will not be refunded.
+            {% endif %}
+        {% else %}
+            You're on time!
+            {% if user.membership == 'R' %}
+                Your pledge will be refunded after you pay for the rental itself.
+            {% endif %}
+        {% endif %}
+    </p>
+
     <p>The amount charged is {{ rental.price_total }}. Please indicate how you will pay below:</p>
     <form id="money_form" action="" method="POST">
     {% csrf_token %}

@@ -2,12 +2,12 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse
 from django.utils import timezone
 
 from .models import *
 from .forms import *
-from .helpers import calculate_change
+from .helpers import calculate_change, add_money
 
 
 def home(request):
@@ -65,7 +65,10 @@ def rent_view(request):
             renter.is_renting = True
             renter.save(update_fields=['is_renting'])
 
-            response = redirect('rentcheckout')
+            if renter.membership == 'G':
+                response = redirect('rentsuccess')
+            elif renter.membership == 'R':
+                response = redirect('rentcheckout')
             return response
     else:
         form = RentForm()
@@ -83,13 +86,31 @@ def checkout_view(request):
     else:
         pledge = 0
     
+    if request.method == 'POST':
+        form = PaymentForm(request.POST, price=pledge)
+        if form.is_valid():
+            add_money(form)
+            return redirect('rentsuccess')
+
+    else:
+        form = PaymentForm(price=pledge)
+
     context = {
         'user': request.user,
         'pledge': pledge,
+        'form': form,        
+    }
+    return render(request, 'asiacar/rent_checkout.html', context)
+
+
+@login_required
+def checkout_success_view(request):
+    rental = Rental.objects.get(renter=request.user, time_returned=None)
+    context = {
         'location': rental.vehicle.park_location, 
         'pincode': rental.pincode,
     }
-    return render(request, 'asiacar/rent_checkout.html', context)
+    return render(request, 'asiacar/rent_success.html', context)
 
 
 @login_required
@@ -101,47 +122,47 @@ def return_view(request):
     rental.save(update_fields=['price_total'])
 
     if request.method == 'POST':
-        form = ReturnForm(request.POST, price_total=rental.price_total)
+        form = PaymentForm(request.POST, price=rental.price_total)
         if form.is_valid():
-            amount_paid = 0
-            for field in form:
-                money = Money.objects.get(name=field.name)
-                number = int(field.value())
-                money.number += number
-                money.save()
-                amount_paid += money.amount * number
-            
+            add_money(form)
+            amount_paid = form.amount_paid(form.cleaned_data)
             amount_change = round(amount_paid - rental.price_total, 2)
+
             response = redirect('returnsuccess')
             response.set_cookie('time_returned', rental.time_returned)
             response.set_cookie('amount_change', amount_change)
             return response
     
     else:
-        form = ReturnForm(price_total=rental.price_total)
+        form = PaymentForm(price=rental.price_total)
 
     context = {
-        'form': form, 
         'user': request.user, 
         'rental': rental,
+        'form': form, 
     }
     return render(request, 'asiacar/return.html', context)
 
 
 @login_required
-def success_view(request):
+def return_success_view(request):
     renter = request.user
-    amount_change = request.COOKIES.get('amount_change')
-    change = calculate_change(amount_change)
-    
-    rental = Rental.objects.get(renter=request.user, time_returned=None)
+
+    rental = Rental.objects.filter(renter=request.user).last()
     rental.time_returned = request.COOKIES.get('time_returned')
-    rental.vehicle.available = True
     rental.save(update_fields=['time_returned'])
+    rental = Rental.objects.filter(renter=request.user).last()
+
+    rental.vehicle.available = True
     rental.vehicle.save(update_fields=['available'])
     
     renter.is_renting = False
     renter.save(update_fields=['is_renting'])
+
+    amount_change = float(request.COOKIES.get('amount_change'))
+    if (renter.membership == 'R') and (rental.get_delay()[0] == False):
+        amount_change += rental.vehicle.subtype.pledgeprice_reg
+    change = calculate_change(amount_change)
 
     context = {
         'user': renter,
@@ -149,52 +170,3 @@ def success_view(request):
         'change': change,
     }
     return render(request, 'asiacar/return_success.html', context)
-
-
-"""
-class SignUp(CreateView):
-    template_name = 'registration/signup.html'
-    form_class = UserForm
-    success_url = reverse_lazy('signupsuccess')
-
-def signup_success(request):
-
-    # put this in helpers.py
-    def create_user(form):
-        membership = form.cleaned_data['membership']
-        first_name = form.cleaned_data['first_name']
-        last_name = form.cleaned_data['last_name']
-        
-        
-        initials = []
-        if membership == 'G':
-            letter = 'G'
-            k = 6
-            for name in [first_name, last_name]:
-                initials.append(name[0].upper())
-        elif membership == 'R':
-            letter = 'N'
-            k = 8
-        num = ''.join(random.choices(string.digits, k=6))
-        username = '-'.join([letter, num, initials])
-        user = User.objects.create(
-            membership=membership, username=username,
-            first_name=first_name, last_name=last_name,
-        )
-        try:
-            user.save()
-        except IntegrityError:
-            create_user(form)
-        return user
-
-    if request.method == 'POST':
-        form = UserForm(request.POST)
-        if form.is_valid():
-            user = create_user(form)
-            context = {'username': user.username}
-            return render(request, 'registration/signup_success.html', context)
-    else:
-        form = UserForm()
-        context = {}
-    return redirect()
-"""

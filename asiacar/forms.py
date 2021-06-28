@@ -27,85 +27,51 @@ class RentForm(forms.Form):
             raise ValidationError('Return date cannot be in the past')
         
 
-class ReturnForm(forms.Form):
+class PaymentForm(forms.Form):
     fifty_euro = forms.IntegerField(
-        required=False, min_value=0, initial=0,
-        label='50 euro'
+        required=True, min_value=0, initial=0, label='50 euro'
     )
     twenty_euro = forms.IntegerField(
-        required=False, min_value=0, initial=0,
-        label='20 euro'
+        required=True, min_value=0, initial=0, label='20 euro'
     )
     ten_euro = forms.IntegerField(
-        required=False, min_value=0, initial=0,
-        label='10 euro'
+        required=True, min_value=0, initial=0, label='10 euro'
     )
     five_euro = forms.IntegerField(
-        required=False, min_value=0, initial=0,
-        label='5 euro'
+        required=True, min_value=0, initial=0, label='5 euro'
     )
     two_euro = forms.IntegerField(
-        required=False, min_value=0, initial=0,
-        label='2 euro'
+        required=True, min_value=0, initial=0, label='2 euro'
     )
     one_euro = forms.IntegerField(
-        required=False, min_value=0, initial=0,
-        label='1 euro'
+        required=True, min_value=0, initial=0, label='1 euro'
     )
     fifty_cent = forms.IntegerField(
-        required=False, min_value=0, initial=0,
-        label='50 cent'
+        required=True, min_value=0, initial=0, label='50 cent'
     )
     twenty_cent = forms.IntegerField(
-        required=False, min_value=0, initial=0,
-        label='20 cent'
+        required=True, min_value=0, initial=0, label='20 cent'
     )
     
     def __init__(self, *args, **kwargs):
-        self.price_total = kwargs.pop('price_total')
-        super(ReturnForm, self).__init__(*args, **kwargs)
+        self.price = kwargs.pop('price')
+        super(PaymentForm, self).__init__(*args, **kwargs)
 
     def clean(self):
         cleaned_data = super().clean()
 
+        amount_paid = self.amount_paid(cleaned_data)
         amount_paid_headroom = max(Money.AMOUNT_CHOICES)[0]
+
+        if amount_paid >= self.price + amount_paid_headroom:
+            raise ValidationError('You are paying way too much!')
+
+        elif amount_paid < self.price:
+            remainder = round(self.price - amount_paid, 2)
+            raise ValidationError(f'{remainder} remains to be paid.')
+
+    def amount_paid(self, cleaned_data):
         amount_paid = 0
         for name, number in cleaned_data.items():
             amount_paid += Money.objects.get(name=name).amount * number
-
-        if amount_paid > self.price_total + amount_paid_headroom:
-            raise ValidationError('You are paying way too much!')
-        elif amount_paid < self.price_total:
-            remainder = round(self.price_total - amount_paid, 2)
-            raise ValidationError(f'{remainder} remains to be paid.')
-
-
-
-"""class MoneyForm(forms.Form):
-    name = forms.IntegerField(
-        required=False, 
-        min_value=0, initial=0,
-    )
-    def __init__(self, *args, **kwargs):
-        self.q_text = money.name
-        super().__init__(*args, **kwargs)
-
-
-class BaseMoneyFormSet(forms.BaseFormSet):
-    def get_form_kwargs(self, index):
-        kwargs = super().get_form_kwargs(index)
-        kwargs['money_name'] = kwargs['money_names'][index]
-        return kwargs"""
-
-
-
-"""
-class UserForm(forms.Form):
-    membership = forms.ChoiceField(
-        widget=forms.RadioSelect,
-        choices=User.MEMBERSHIP_CHOICES,
-    )
-    first_name = forms.CharField()
-    last_name = forms.CharField()
-"""
-
+        return amount_paid
