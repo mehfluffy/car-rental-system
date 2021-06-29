@@ -20,7 +20,7 @@ def subtract_money(change_dict):
 def calculate_change(change_amount):
     change_amount = Decimal(change_amount)
     if change_amount != change_amount.quantize(Decimal('.01')):  # check cents
-        change_amount = silly_rounding(change_amount)
+        change_amount = cents_rounding(change_amount)
 
     money_available = list(Money.objects.exclude(number=0))
     if change_amount / Decimal('0.2') % 1 == 0:  # amounts like xx.60, xx.80
@@ -31,15 +31,19 @@ def calculate_change(change_amount):
         current_coin = money_available.pop(0)
         current_amount = Decimal(str(current_coin.amount))
         number = change_amount // current_amount
-        if number > 0:
-            change_dict[current_coin.name] = number
-        change_amount = change_amount % current_amount
+        
+        if number <= current_coin.number:  # if have enough bills to make the change
+            change_amount = change_amount % current_amount
+            if number > 0:
+                change_dict[current_coin.name] = number
+    
     return change_dict
 
 
-def silly_rounding(change_amount):
+def cents_rounding(change_amount):
     if change_amount % 1 <= 0.4:
         modifier = Decimal('0.2')
     else:
         modifier = Decimal('0.1')
     return change_amount + modifier - (change_amount % modifier)
+    
