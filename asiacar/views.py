@@ -5,8 +5,8 @@ from django.db import IntegrityError
 from django.http import HttpResponse
 from django.utils import timezone
 
-from .models import *
-from .forms import *
+from .models import Vehicle, Rental
+from .forms import RentForm, PaymentForm
 from .helpers import calculate_change, add_money, subtract_money
 
 

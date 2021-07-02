@@ -1,9 +1,9 @@
+from math import ceil
+from random import choices
+from string import digits
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
-from math import ceil
-import random
-import string
 
 
 class Subtype(models.Model):
@@ -86,7 +86,7 @@ class Rental(models.Model):
 
     def set_pincode(self):
         if not self.pincode:
-            self.pincode = ''.join(random.choices(string.digits, k=6))
+            self.pincode = ''.join(choices(digits, k=6))
 
     def get_num_hours(self):
         seconds = (self.time_end - self.time_start).total_seconds()

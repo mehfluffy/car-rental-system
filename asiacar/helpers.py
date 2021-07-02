@@ -1,5 +1,6 @@
+from decimal import Decimal
+
 from .models import Money
-from decimal import *
 
 
 def add_money(payment_form):

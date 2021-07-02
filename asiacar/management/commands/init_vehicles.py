@@ -1,7 +1,9 @@
+from string import ascii_uppercase
+
 from django.core.management.base import BaseCommand
+
 from asiacar.models import Subtype, Vehicle
 
-from string import ascii_uppercase
 
 class Command(BaseCommand):
 

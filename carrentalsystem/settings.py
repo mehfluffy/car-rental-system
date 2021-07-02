@@ -48,6 +48,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'asiacar.middleware.TimezoneMiddleware',
 ]
 
 ROOT_URLCONF = 'carrentalsystem.urls'
@@ -82,8 +83,12 @@ DATABASES = {
 }
 
 
+# Custom user authentication
+
 AUTH_USER_MODEL = 'asiacar.User'
+
 AUTHENTICATION_BACKENDS = ['asiacar.auth_backend.PasswordlessLogin']
+
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
