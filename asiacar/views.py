@@ -5,15 +5,17 @@ from django.db import IntegrityError
 from django.http import HttpResponse
 from django.utils import timezone
 
-from .models import Vehicle, Rental
+from .models import Vehicle, Rental, Subtype
 from .forms import RentForm, PaymentForm
 from .helpers import calculate_change, add_money, subtract_money
 
 
 def home(request):
-    context = {'user': request.user}
+    context = {
+        'user': request.user,
+        'subtypes': Subtype.objects.all(),
+    }
     return render(request, 'asiacar/home.html', context)
-# a ListView of the prices?
 
 
 def login_view(request):

@@ -31,7 +31,7 @@ class Command(BaseCommand):
                 pledge = 100.0
             else:
                 pledge = 300.0
-            pledgeprice_reg.append(100.0)
+            pledgeprice_reg.append(pledge)
         
         entries = []
         for i in range(len(subtype_name)):

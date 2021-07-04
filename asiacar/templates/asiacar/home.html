@@ -1,4 +1,24 @@
 {% extends "asiacar/base.html" %}
 
 {% block content %}
+<p>Price list:</p>
+<table>
+    <thead>
+        <td>Vehicle type</td>
+        <td>Hourly price (Gold)</td>
+        <td>Hourly price (Regular)</td>
+        <td>Pledge (Regular)</td>
+    </thead>
+    <tbody>
+    {% for subtype in subtypes %}
+        <tr>
+            <td>{{ subtype.subtype_name}}</td>
+            <td>{{ subtype.hourprice_gold }}</td>
+            <td>{{ subtype.hourprice_reg }}</td>
+            <td>{{ subtype.pledgeprice_reg }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
 {% endblock %}
