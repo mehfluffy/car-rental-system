@@ -87,7 +87,10 @@ DATABASES = {
 
 AUTH_USER_MODEL = 'asiacar.User'
 
-AUTHENTICATION_BACKENDS = ['asiacar.auth_backend.PasswordlessLogin']
+AUTHENTICATION_BACKENDS = [
+    'asiacar.auth_backend.PasswordlessLogin',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 
 # Password validation
