@@ -32,7 +32,8 @@ class Vehicle(models.Model):
     # unique number = auto primary key
     subtype = models.ForeignKey(Subtype, on_delete=models.CASCADE)
     park_location = models.CharField(max_length=5)
-    available = models.BooleanField(db_column='available', default=True)
+    available = models.BooleanField(default=True)
+    license_number = models.CharField(max_length=8, default='')
 
     def set_unavailable(self):
         self.available = False
